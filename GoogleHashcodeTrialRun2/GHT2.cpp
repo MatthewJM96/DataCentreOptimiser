@@ -5,6 +5,9 @@
 #include <vector>
 #include <algorithm>
 
+// What lies below is an utter mess at this point. It needs cleaning up and optimising, but it's for the Google Hashcode comp, and ain't nobody got time to do that in 4 hours.
+
+
 struct Server {
     int id;
     int poolID;
@@ -300,11 +303,14 @@ public:
     }
 
     void solve() {
-        std::vector<std::vector<Server>> servers;
+        std::vector<std::vector<Server>> availableServers;
 
         for (int i = 0; i < m_idealRows.size(); ++i) {
             Row r = m_idealRows[i];
-            //std::vector<Server> rowServers = std:r.servers;
+            std::vector<Server> rowServers;
+            for (auto& s : r.servers) {
+                rowServers.push_back(s.second);
+            }
 
             std::sort(r.servers.begin(), r.servers.end(), [](std::pair<int, Server> a, std::pair<int, Server> b) {
                 return a.second.power > b.second.power;
@@ -319,18 +325,40 @@ public:
                 if (j < 0) break;
 
                 add(m_dataCentre.rows[i], s.second, j);
+                auto& it = std::find_if(rowServers.begin(), rowServers.end(), [&s](Server server) {
+                    return s.second.id == server.id;
+                });
+                if (it != rowServers.end()) {
+                    rowServers.erase(it);
+                }
             }
+            availableServers.push_back(rowServers);
         }
 
-        for (auto& i : m_dataCentre.rows) {
-            std::cout << i.slotUsage << std::endl;
-        }
+        //for (auto& i : m_dataCentre.rows) {
+        //    std::cout << (m_dataCentre.rowSize - i.unavailableSlots.size()) - i.slotUsage << std::endl;
+        //}
 
-        for (Row& r : m_dataCentre.rows) {
+        for (int i = 0; i < m_dataCentre.rowCount; ++i) {
+            Row r = m_dataCentre.rows[i];
             for (auto& availableSlot : r.availableSlots) {
-                //for ()
+                std::sort(availableServers[i].begin(), availableServers[i].end(), [](Server a, Server b) {
+                    return a.capacity > b.capacity;
+                });
+
+                for (Server& server : availableServers[i]) {
+                    if (server.size <= availableSlot.second) {
+                        add(m_dataCentre.rows[i], server, availableSlot.first);
+                        break;
+                    }
+                }
             }
         }
+
+        //std::cout << std::endl << std::endl;
+        //for (auto& i : m_dataCentre.rows) {
+        //    std::cout << (m_dataCentre.rowSize - i.unavailableSlots.size()) - i.slotUsage << std::endl;
+        //}
 
         std::cout << "ASHD";
     }
