@@ -338,6 +338,10 @@ public:
         //for (auto& i : m_dataCentre.rows) {
         //    std::cout << (m_dataCentre.rowSize - i.unavailableSlots.size()) - i.slotUsage << std::endl;
         //}
+        for (auto& i : m_dataCentre.rows) {
+            std::cout << i.capacity << std::endl;
+        }
+        std::cout << std::endl << std::endl;
 
         for (int i = 0; i < m_dataCentre.rowCount; ++i) {
             Row r = m_dataCentre.rows[i];
@@ -355,14 +359,18 @@ public:
             }
         }
 
-        //std::cout << std::endl << std::endl;
         //for (auto& i : m_dataCentre.rows) {
         //    std::cout << (m_dataCentre.rowSize - i.unavailableSlots.size()) - i.slotUsage << std::endl;
         //}
-
-        std::cout << "ASHD";
+        for (auto& i : m_dataCentre.rows) {
+            std::cout << i.capacity << std::endl;
+        }
+        std::cout << std::endl << std::endl;
     }
 
+    DataCentre getResult() {
+        return m_dataCentre;
+    }
 private:
     int findValidFirstSlot(Row r, Server s) {
         for (std::pair<int, int> availableSlot : r.availableSlots) {
@@ -375,6 +383,41 @@ private:
 
     DataCentre m_dataCentre;
     std::vector<Row> m_idealRows;
+};
+class PoolSolver {
+public:
+    void init(DataCentre dc) {
+        m_dataCentre = dc;
+    }
+
+    void solve() {        
+        for (Row r : m_dataCentre.rows) {
+            for (std::pair<int, Server> s : r.servers) {
+                int poolCapacity = INT_MAX;
+                int poolID = -1;
+
+                for (int i = 0; i < m_dataCentre.pools.size(); ++i) {
+                    Pool p = m_dataCentre.pools[i];
+                    if (p.capacity < poolCapacity) {
+                        poolID = i;
+                        poolCapacity = p.capacity;
+                    }
+                }
+
+                add(m_dataCentre.pools[poolID], s.second);
+            }
+        }
+
+        for (Pool p : m_dataCentre.pools) {
+            std::cout << p.capacity << std::endl;
+        }
+    }
+
+     DataCentre getResult() {
+        return m_dataCentre;
+    }
+private:
+    DataCentre m_dataCentre;
 };
 
 int main() {
@@ -390,6 +433,14 @@ int main() {
     BinSolver bs;
     bs.init(dataCentre, rows);
     bs.solve();
+    dataCentre = bs.getResult();
+
+    PoolSolver ps;
+    ps.init(dataCentre);
+    ps.solve();
+    dataCentre = ps.getResult();
+
+    std::cout << "IAGYSD";
 
     return 0;
 }
